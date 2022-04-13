@@ -38,6 +38,7 @@ function Level:init()
 
             if sumVel > 20 then
                 table.insert(self.destroyedBodies, obstacleFixture:getBody())
+                self.playerHitted = true
             end
         end
 
@@ -129,6 +130,8 @@ function Level:init()
 
     -- background graphics
     self.background = Background()
+
+    self.playerHitted = false
 end
 
 function Level:update(dt)
@@ -172,13 +175,28 @@ function Level:update(dt)
 
     -- replace launch marker if original alien stopped moving
     if self.launchMarker.launched then
-        local xPos, yPos = self.launchMarker.alien.body:getPosition()
-        local xVel, yVel = self.launchMarker.alien.body:getLinearVelocity()
-        
-        -- if we fired our alien to the left or it's almost done rolling, respawn
-        if xPos < 0 or xPos > VIRTUAL_WIDTH or (math.abs(xVel) + math.abs(yVel) < 1.5) then
-            self.launchMarker.alien.body:destroy()
+        if love.keyboard.wasPressed('space') and not self.playerHitted then
+            self.launchMarker:splitAliens()
+        end
+
+        local allPlayersDestroyed = true
+        for _, player in pairs(self.launchMarker.aliens) do
+            if not player.body:isDestroyed() then
+                local xPos, yPos = player.body:getPosition()
+                local xVel, yVel = player.body:getLinearVelocity()
+
+                -- if we fired our alien to the left or it's almost done rolling, respawn
+                if xPos < 0 or xPos > VIRTUAL_WIDTH or (math.abs(xVel) + math.abs(yVel) < 10) then
+                    player.body:destroy()
+                end
+            end
+
+            allPlayersDestroyed = allPlayersDestroyed and player.body:isDestroyed()
+        end
+
+        if allPlayersDestroyed then
             self.launchMarker = AlienLaunchMarker(self.world)
+            self.playerHitted = false
 
             -- re-initialize level if we have no more aliens
             if #self.aliens == 0 then

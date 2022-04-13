@@ -175,8 +175,9 @@ function Level:update(dt)
 
     -- replace launch marker if original alien stopped moving
     if self.launchMarker.launched then
-        if love.keyboard.wasPressed('space') and not self.playerHitted then
+        if love.keyboard.wasPressed('space') and not self.playerSplitted and not self.playerHitted then
             self.launchMarker:splitAliens()
+            self.playerSplitted = true
         end
 
         local allPlayersDestroyed = true
@@ -196,6 +197,7 @@ function Level:update(dt)
 
         if allPlayersDestroyed then
             self.launchMarker = AlienLaunchMarker(self.world)
+            self.playerSplitted = false
             self.playerHitted = false
 
             -- re-initialize level if we have no more aliens
